@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"finalProject/data"
 	"log"
 	"sync"
 
@@ -14,4 +15,5 @@ type Config struct {
 	InfoLog  *log.Logger
 	ErrorLog *log.Logger
 	Wait     *sync.WaitGroup
+	Models   data.Models
 }
