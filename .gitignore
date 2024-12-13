@@ -1,4 +1,4 @@
 .envrc
 bin/*
 */db-data/*
-cmd
+cmd/web/db-data
