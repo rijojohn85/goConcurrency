@@ -4,3 +4,5 @@ bin/*
 cmd/web/db-data
 db-data
 myapp
+__MACOSX
+db.sql
