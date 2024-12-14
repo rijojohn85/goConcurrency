@@ -34,6 +34,14 @@ func (app *Config) PostLoginPage(w http.ResponseWriter, req *http.Request) {
 	}
 	passCheck, err := user.PasswordMatches(password)
 	if !passCheck || err != nil {
+		if !passCheck {
+			msg := Message{
+				To:      email,
+				Subject: "Failed Login Attempt",
+				Data:    "Invalid Login Attempt",
+			}
+			app.sendEmail(msg)
+		}
 		app.ErrorLog.Println(err, "get passCheck", password)
 		app.Session.Put(req.Context(), "error", "invalid credeintals")
 		http.Redirect(w, req, "/login", http.StatusUnauthorized)

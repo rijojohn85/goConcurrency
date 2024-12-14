@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/gob"
 	"finalProject/data"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -21,7 +20,7 @@ import (
 	_ "github.com/jackc/pgx/v4/stdlib"
 )
 
-const webPort = ":8080"
+const webPort = ":8000"
 
 func main() {
 	// connect to the database
@@ -48,14 +47,37 @@ func main() {
 	go app.listenForShutdown()
 
 	// set up mail
+	app.Mailer = app.createMail()
+	go app.listenForMail()
 
 	// listen for web connections
 	app.serve()
 }
 
+func (app *Config) createMail() Mail {
+	// create channels
+	errorChan := make(chan error)
+	mailerChan := make(chan Message, 100)
+	mailerDoneChan := make(chan bool)
+
+	m := Mail{
+		Domain:      "localhost",
+		Host:        "localhost",
+		Port:        1025,
+		Encryption:  "none",
+		FromName:    "My Company",
+		FromAddress: "info@mycompany.com",
+		ErrorChan:   errorChan,
+		MailerChan:  mailerChan,
+		DoneChan:    mailerDoneChan,
+		Wait:        app.Wait,
+	}
+	return m
+}
+
 func (app *Config) serve() {
 	srv := &http.Server{
-		Addr:    fmt.Sprintf("%s", webPort),
+		Addr:    webPort,
 		Handler: app.routes(),
 	}
 	app.InfoLog.Println("Starting Web server")
@@ -142,6 +164,10 @@ func (app *Config) shutdown() {
 
 	// block until Waitgroup is emnpty
 	app.Wait.Wait()
+	app.Mailer.DoneChan <- true
 
 	app.InfoLog.Println("Closing channels and shutting down app")
+	close(app.Mailer.MailerChan)
+	close(app.Mailer.ErrorChan)
+	close(app.Mailer.DoneChan)
 }
